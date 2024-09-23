@@ -5,7 +5,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	LPVOID lpReserved
 )
 {
-	/*switch (ul_reason_for_call)
+	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
 		MessageBox(NULL, L"The DLL is loaded", L"DLL Skeleton", MB_OK);
@@ -19,6 +19,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	case DLL_PROCESS_DETACH:
 		MessageBox(NULL, L"The DLL is unloaded", L"DLL Skeleton", MB_OK);
 		break;
-	}*/
+	}
 	return TRUE;
 }

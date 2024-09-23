@@ -8,7 +8,9 @@ typedef void(*ChangeText)(HANDLE, HANDLE, const wchar_t*, const wchar_t*);
 const char STR[3] = "AB";
 const int STR_SIZE = 128;
 const int BUF_SIZE = 512;
-const char FILENAME[13] = "new_file.txt";
+
+const char PATH[46] = "D:/code/cplusplus/winapi/sem3/lab5/x64/Debug/";
+const char FILENAME[59] = "D:/code/cplusplus/winapi/sem3/lab5/x64/Debug/file.out";
 
 int main(int argc, char* argv[])
 {
@@ -61,14 +63,20 @@ int main(int argc, char* argv[])
 					else {
 						char* cntx = nullptr;
 						char* inFile = strtok_s(szBuf, " ", &cntx);
+						char* fullinfile = (char*)malloc(strlen(inFile) + 46);
+
+						memcpy(fullinfile, PATH, 45);
+						memcpy(fullinfile + 45, inFile, strlen(inFile) + 1);
 						char* symbs = strtok_s(NULL, " ", &cntx);
+						cout << inFile << endl;
 						HANDLE hIn, hOut;
-						hIn = CreateFileA(inFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+						hIn = CreateFileA(fullinfile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 						if (hIn == INVALID_HANDLE_VALUE)
 						{
-							cout << "Error: " << GetLastError() << endl;
+							cout << "Error: " << GetLastError() << " Probably incorrect data." << endl;
 							break;
 						}
+
 
 						hOut = CreateFileA(FILENAME, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 						if (hOut == INVALID_HANDLE_VALUE) {

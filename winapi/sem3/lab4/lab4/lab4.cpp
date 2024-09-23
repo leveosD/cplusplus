@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
 	using namespace std;
 	DWORD cbWritten, cbRead;
 	HANDLE hReadPipe1, hWritePipe1, hReadPipe2, hWritePipe2;
-	char filename[STR_SIZE] = "C:/proga/lab4/x64/Debug/lab4_2procces.exe", result[STR_SIZE] = { 0 };
+	char filename[STR_SIZE] = "D:/code/cplusplus/winapi/sem3/lab4/x64/Debug/lab4_2procces.exe", result[STR_SIZE] = { 0 };
 	char* arguments = new char[STR_SIZE];
 	strcpy_s(arguments, STR_SIZE, argv[1]);
 	strcat_s(arguments, STR_SIZE, " ");

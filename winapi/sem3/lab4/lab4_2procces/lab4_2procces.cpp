@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 	filename = strtok_s(message, " ", &cntx);
 	symbs = strtok_s(NULL, " ", &cntx);
 
-	hLib = LoadLibrary(L"C:/proga/labaklava/x64/Debug/labaklava.dll");
+	hLib = LoadLibrary(L"D:/code/cplusplus/winapi/sem3/labaklava/x64/Debug/labaklava.dll");
 	if (hLib == NULL) {
 		WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "ERROR_MOD_NOT_FOUND", 20, &cbWritten, NULL);
 		return 2;
@@ -44,26 +44,27 @@ int main(int argc, char* argv[])
 	//size_t size = strlen(argv[1]) + 1;
 	//wchar_t* inFile = new wchar_t[size];
 
+	size_t size = strlen(filename) + 1;
+	wchar_t* inFile = new wchar_t[size];
 	size_t outSize;
-	//mbstowcs_s(&outSize, inFile, size, argv[1], size - 1);
-	char outFile[20] = "text1.txt\0";
-	/*strcpy_s(inFile, strlen(argv[1]) + 1, argv[1]);
-	char* pos = strstr(inFile, ".");
-	if (pos == NULL)
-		strcat_s(inFile, STR_SIZE, ".txt");
-	else
+	mbstowcs_s(&outSize, inFile, size, filename, size - 1);
+	wchar_t* outFile = new wchar_t[size];
+	//wchar_t outFile[20] = L"text1.txt";
+	wcscpy_s(outFile, size, inFile);
+	wchar_t* pos = wcsstr(outFile, L".");
+	if (pos != NULL)
 	{
-		int letter = pos - inFile;
-		inFile[letter + 1] = 't';
-		inFile[letter + 2] = 'x';
-		inFile[letter + 3] = 't';
-		inFile[letter + 4] = '\0';
-	}*/
+		int letter = pos - outFile;
+		outFile[letter + 1] = L'o';
+		outFile[letter + 2] = L'u';
+		outFile[letter + 3] = L't';
+		outFile[letter + 4] = L'\0';
+	}
 	wchar_t* wSymbs = new wchar_t[strlen(symbs) + 1];
 	mbstowcs_s(&outSize, wSymbs, strlen(symbs) + 1, symbs, 2);
 	
 	HANDLE hIn, hOut;
-	hIn = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+	hIn = CreateFileW(inFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 	if (hIn == INVALID_HANDLE_VALUE)
 	{
 		WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "ERROR", 5, &cbWritten, NULL);
@@ -71,7 +72,7 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
-	hOut = CreateFileA(outFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	hOut = CreateFileW(outFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hOut == INVALID_HANDLE_VALUE) {
 		WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "ERROR", 5, &cbWritten, NULL);
 		FreeLibrary(hLib);

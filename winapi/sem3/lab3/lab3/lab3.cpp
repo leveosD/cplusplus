@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 	LPSTARTUPINFOA si = new STARTUPINFOA[127];
 	LPPROCESS_INFORMATION pi = new PROCESS_INFORMATION[127];
 	HANDLE hThread[127];
-	char exeName[MAX_SIZE] = "C:/proga/labaklava/x64/Debug/test.exe ";
+	char exeName[MAX_SIZE] = "D:/code/cplusplus/winapi/sem3/labaklava/x64/Debug/test.exe ";
 	//char exeName[MAX_SIZE] = "C:/proga/lab4_2/x64/Debug/lab4_2.exe ";
 	char* ln;
 	for (int i = 1; i < (argc - 1); i+= 2) {
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 			if (finish == WAIT_OBJECT_0) {
 				//printf("Process %Lu is finished\n",pi[i].dwProcessId);
 				GetExitCodeProcess(pi[i].hProcess, &result);
-				cout << "Process " << pi[i].dwProcessId << " finished by " <<  result << endl;
+				cout << "\nProcess " << pi[i].dwProcessId << " finished by " <<  result << endl;
 				total += result;
 			}
 			else

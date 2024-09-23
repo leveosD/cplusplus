@@ -5,24 +5,22 @@ extern "C" __declspec(dllexport) int ChangeText(HANDLE hIn, HANDLE hOut, wchar_t
 {
 	const int BUF_SIZE = 256;
 	char buffer[BUF_SIZE] = { 0 };
+	wchar_t wbuffer[BUF_SIZE] = { 0 };
 	DWORD nin, nout;
 	int count = 0;
+	size_t outSize;
 	while (ReadFile(hIn, buffer, BUF_SIZE, &nin, NULL) && nin > 0)
 	{
-		wchar_t str[BUF_SIZE] = { 0 };
-		MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, buffer, nin, str, BUF_SIZE);
+		mbstowcs_s(&outSize, wbuffer, BUF_SIZE, buffer, BUF_SIZE - 1);
 		for (int i = 0; i < nin; i++) {
-			if (str[i] == old_symbs[0] && str[i + 1] == old_symbs[1]) {
-				str[i] = new_symbs[0];
-				str[i + 1] = new_symbs[1];
+			if (wbuffer[i] == old_symbs[0] && wbuffer[i + 1] == old_symbs[1]) {
+				wbuffer[i] = new_symbs[0];
+				wbuffer[i + 1] = new_symbs[1];
 				i++;
 				count++;
 			}
 		}
-		BOOL flag;
-		char changedstr[BUF_SIZE] = { 0 };
-		WideCharToMultiByte(CP_UTF8, WC_DEFAULTCHAR, str, nin, changedstr, BUF_SIZE, NULL, &flag);
-		WriteFile(hOut, changedstr, nin, &nout, NULL);
+		WriteFile(hOut, wbuffer, nin * 2, &nout, NULL);
 	}
 	return count;
 }

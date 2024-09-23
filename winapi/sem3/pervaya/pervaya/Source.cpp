@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	wchar_t* inFile = new wchar_t[size];
 	size_t outSize;
 	mbstowcs_s(&outSize, inFile, size, argv[1], size - 1);
-	/*wchar_t* outFile = new wchar_t[size];
+	wchar_t* outFile = new wchar_t[size];
 	wcscpy_s(outFile, size, inFile);
 	wchar_t* pos = wcsstr(outFile, L".");
 	if (pos != NULL)
@@ -35,9 +35,7 @@ int main(int argc, char* argv[])
 		outFile[letter + 2] = L'u';
 		outFile[letter + 3] = L't';
 		outFile[letter + 4] = L'\0';
-	}*/
-
-	wchar_t outFile[12] = L"outfile.txt";
+	}
 
 	hIn = CreateFile(inFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 	if (hIn == INVALID_HANDLE_VALUE)
@@ -55,8 +53,8 @@ int main(int argc, char* argv[])
 
 	wchar_t symbs[3];
 	mbstowcs_s(&outSize, symbs, 3, argv[2], 2);
-	WriteFile(hOut, argv[2], 3, &nOut, NULL);
-	WriteFile(hOut, "\n", 2, &nOut, NULL);
+	/*WriteFile(hOut, argv[2], 3, &nOut, NULL);
+	WriteFile(hOut, "\n", 2, &nOut, NULL);*/
 	int count = 0;
 	wchar_t wbuffer[BUF_SIZE] = { 0 };
 	char buffer[BUF_SIZE] = { 0 };
@@ -71,7 +69,8 @@ int main(int argc, char* argv[])
 				count++;
 			}
 		}
-		WriteFile(hOut, wbuffer, nIn, &nOut, NULL);
+		//wcout << wbuffer << L' ' << nIn << endl;
+		WriteFile(hOut, wbuffer, nIn*2, &nOut, NULL);
 	}
 
 	wcout << "\nChanges: " << count;

@@ -43,7 +43,6 @@ int main(int argc, char* argv[])
 	}
 
 	wchar_t* symbs = new wchar_t[3];
-	//strcpy_s(symbs, 3, argv[2]);
 	mbstowcs_s(&outSize, symbs, 3, argv[2], 2);
 
 
@@ -61,7 +60,7 @@ int main(int argc, char* argv[])
 		return 5;
 	}
 
-	wcout << "Changes" << ct(hIn, hOut, STR, symbs);
+	wcout << "Changes: " << ct(hIn, hOut, symbs, STR);
 
 	delete[] inFile;
 	FreeLibrary(hLib);
