@@ -77,7 +77,6 @@ int main()
 		}
 		else
 		{
-			int c = 0;
 			strcpy(str, ((LPSTR)lpFileMap));
 			char* cntx = nullptr;
 			char* inFile = strtok_s(str, " ", &cntx);
