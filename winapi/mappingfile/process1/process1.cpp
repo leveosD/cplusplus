@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <conio.h>
 
-const CHAR ABSOLUTE_PATH[50] = "D:/code/cplusplus/winapi/acync_project/x64/Debug/";
+const CHAR ABSOLUTE_PATH[48] = "D:/code/cplusplus/winapi/mappingfile/x64/Debug/";
 
 HANDLE hSemaphoreSend;
 HANDLE hSemaphoreRecv;
@@ -67,11 +67,13 @@ int main()
 		dwRetCode = WaitForMultipleObjects(2, hSemaphores, FALSE, INFINITE);
 		if (dwRetCode == WAIT_ABANDONED_0 ||
 			dwRetCode == WAIT_ABANDONED_0 + 1 ||
-			dwRetCode == WAIT_FAILED)// ||
-			//dwRetCode == WAIT_OBJECT_0 + 1)
+			dwRetCode == WAIT_FAILED)
 		{
 			printf("Waiting error: %d", GetLastError());
 			break;
+		}
+		else if (dwRetCode == WAIT_OBJECT_0 + 1) {
+			printf("Exit...");
 		}
 		else
 		{
@@ -80,8 +82,8 @@ int main()
 			char* cntx = nullptr;
 			char* inFile = strtok_s(str, " ", &cntx);
 			filename = new char[50 + strlen(inFile)];
-			memcpy(filename, ABSOLUTE_PATH, 50);
-			memcpy(filename + 49, inFile, strlen(inFile) + 1);
+			memcpy(filename, ABSOLUTE_PATH, 48);
+			memcpy(filename + 47, inFile, strlen(inFile) + 1);
 			char* symbs = strtok_s(NULL, " ", &cntx);
 			HANDLE hIn, hOut;
 			hIn = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
