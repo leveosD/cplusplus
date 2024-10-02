@@ -3,16 +3,19 @@
 #include <stdio.h>
 #include <conio.h>
 
-HANDLE hEventSend;
-HANDLE hEventRecv;
-HANDLE hEventTermination;
-HANDLE hEvents[2];
-CHAR lpEventSendName[] =
-"$MylEventSendName$";
-CHAR lpEventRecvName[] =
-"$MylEventRecvName$";
-CHAR lpEventTerminationName[] =
-"$MyEventTerminationName$";
+const CHAR ABSOLUTE_PATH[50] = "D:/code/cplusplus/winapi/acync_project/x64/Debug/";
+
+HANDLE hSemaphoreSend;
+HANDLE hSemaphoreRecv;
+HANDLE hSemaphoreTermination;
+HANDLE hSemaphores[2];
+CHAR lSemaphoreSendName[] =
+"$MylSemaphoreSendName$";
+CHAR lpSemaphoreRecvName[] =
+"$MylSemaphoreRecvName$";
+CHAR lpSemaphoreTerminationName[] =
+"$MylSemaphoreTerminationName$";
+
 CHAR lpFileShareName[] =
 "$MyFileShareName$";
 HANDLE hFileMapping;
@@ -20,44 +23,34 @@ LPVOID lpFileMap;
 
 const char FILENAME[13] = "new_file.txt";
 const size_t BUF_SIZE = 512;
-const char STR[3] = "AB";
+const char STR[3] = "#@";
 
 int main()
 {
 	DWORD dwRetCode;
 	CHAR str[80];
-	//FILE* hdl;
+	char* filename;
 	DWORD  cbWritten;
 	DWORD   total = 0;
 	char message[80] = { 0 };
 	printf("Mapped and shared file, event sync, server process\n");
-	hEventSend = CreateEventA(NULL, FALSE, FALSE, lpEventSendName);
-	hEventRecv = CreateEventA(NULL, FALSE, FALSE, lpEventRecvName);
-	if (hEventSend == NULL || hEventRecv == NULL)
+	hSemaphoreSend = CreateSemaphoreA(NULL, 0, 1, lSemaphoreSendName);
+	hSemaphoreRecv = CreateSemaphoreA(NULL, 0, 1, lpSemaphoreRecvName);
+	hSemaphoreTermination = CreateSemaphoreA(NULL, 0, 1, lpSemaphoreTerminationName);
+	if (hSemaphoreSend == NULL || hSemaphoreRecv == NULL || hSemaphoreTermination == NULL)
 	{
-		fprintf(stdout, "CreateEvent: Error %ld\n",
+		printf("CreateSemaphore: Error %ld\n",
 			GetLastError());
 		return 0;
 	}
-	if (GetLastError() == ERROR_ALREADY_EXISTS)
-	{
-		printf("\nApplication EVENT already started\n"
-			"Press any key to exit...");
-		return 0;
-	}
-	hEventTermination = CreateEventA(NULL,
-		FALSE, FALSE, lpEventTerminationName);
-	if (hEventTermination == NULL)
-	{
-		fprintf(stdout, "CreateEvent (Termination): Error %ld\n",
-			GetLastError());
-		return 0;
-	}
+	hSemaphores[0] = hSemaphoreSend;
+	hSemaphores[1] = hSemaphoreTermination;
+
 	hFileMapping = CreateFileMappingA(INVALID_HANDLE_VALUE,
 		NULL, PAGE_READWRITE, 0, 100, lpFileShareName);
 	if (hFileMapping == NULL)
 	{
-		fprintf(stdout, "CreateFileMapping: Error %ld\n",
+		printf("CreateFileMapping: Error %ld\n",
 			GetLastError());
 		return 0;
 	}
@@ -65,78 +58,93 @@ int main()
 		FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
 	if (lpFileMap == 0)
 	{
-		fprintf(stdout, "MapViewOfFile: Error %ld\n",
+		printf("MapViewOfFile: Error %ld\n",
 			GetLastError());
 		return 0;
 	}
-	hEvents[0] = hEventTermination;
-	hEvents[1] = hEventSend;
 	while (TRUE)
 	{
-		dwRetCode = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
+		dwRetCode = WaitForMultipleObjects(2, hSemaphores, FALSE, INFINITE);
 		if (dwRetCode == WAIT_ABANDONED_0 ||
 			dwRetCode == WAIT_ABANDONED_0 + 1 ||
-			dwRetCode == WAIT_OBJECT_0 ||
-			dwRetCode == WAIT_FAILED)
+			dwRetCode == WAIT_FAILED)// ||
+			//dwRetCode == WAIT_OBJECT_0 + 1)
+		{
+			printf("Waiting error: %d", GetLastError());
 			break;
+		}
 		else
 		{
-			puts(((LPSTR)lpFileMap));
+			int c = 0;
 			strcpy(str, ((LPSTR)lpFileMap));
 			char* cntx = nullptr;
 			char* inFile = strtok_s(str, " ", &cntx);
+			filename = new char[50 + strlen(inFile)];
+			memcpy(filename, ABSOLUTE_PATH, 50);
+			memcpy(filename + 49, inFile, strlen(inFile) + 1);
 			char* symbs = strtok_s(NULL, " ", &cntx);
 			HANDLE hIn, hOut;
-			hIn = CreateFileA(inFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+			hIn = CreateFileA(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 			if (hIn == INVALID_HANDLE_VALUE)
 			{
-				sprintf(message, "(Server)Can't open %s! Error: %d", inFile, GetLastError());
+				sprintf(message, "(Server)Can't open %s! Error: %d\n", filename, GetLastError());
+				printf("%s", message);
 				WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, strlen(message) + 1, &cbWritten, NULL);
-				printf("\n");
 				strcpy(((LPSTR)lpFileMap), message);
+			}
+			int len = strlen(filename) + 1;
+			char* filename2 = new char[len];
+			strcpy_s(filename2, len, filename);
+			char* pos = strchr(filename2, '.');
+			if (pos != nullptr) {
+				int letter = pos - filename2;
+				filename2[letter + 1] = 'o';
+				filename2[letter + 2] = 'u';
+				filename2[letter + 3] = 't';
+				filename2[letter + 4] = '\0';
+			}
+			hOut = CreateFileA(filename2, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (hOut == INVALID_HANDLE_VALUE) {
+				sprintf(message, "(Server)Can't create %s! Error: %d\n", filename2, GetLastError());
+				WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, strlen(message) + 1, &cbWritten, NULL);
+				printf("%s\n", message);
+				strcpy(((char*)lpFileMap), message);
 			}
 
-			hOut = CreateFileA(FILENAME, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (hOut == INVALID_HANDLE_VALUE) {
-				sprintf(message, "(Server)Can't create %s! Error: %d", FILENAME, GetLastError());
-				WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, strlen(message) + 1, &cbWritten, NULL);
-				printf("\n");
-				strcpy(((LPSTR)lpFileMap), message);
-			}
-			CHAR buffer[BUF_SIZE] = { 0 };
-			DWORD nIn, nOut;
+			char buffer[BUF_SIZE] = { 0 };
+			wchar_t wbuffer[BUF_SIZE] = { 0 };
+			DWORD nin, nout;
 			int count = 0;
-			while (ReadFile(hIn, buffer, BUF_SIZE, &nIn, NULL) && nIn > 0)
+			size_t outSize;
+
+			while (ReadFile(hIn, buffer, BUF_SIZE, &nin, NULL) && nin > 0)
 			{
-				wchar_t str[BUF_SIZE] = { 0 };
-				MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, buffer, nIn, str, BUF_SIZE);
-				for (int i = 0; i < nIn; i++) {
-					if (str[i] == symbs[0] && str[i + 1] == symbs[1]) {
-						str[i] = STR[0];
-						str[i + 1] = STR[1];
+				mbstowcs_s(&outSize, wbuffer, BUF_SIZE, buffer, BUF_SIZE - 1);
+				for (int i = 0; i < nin; i++) {
+					if (wbuffer[i] == symbs[0] && wbuffer[i + 1] == symbs[1]) {
+						wbuffer[i] = STR[0];
+						wbuffer[i + 1] = STR[1];
 						i++;
 						count++;
 					}
 				}
-				BOOL flag;
-				char changedstr[BUF_SIZE] = { 0 };
-				WideCharToMultiByte(CP_UTF8, WC_DEFAULTCHAR, str, nIn, changedstr, BUF_SIZE, NULL, &flag);
-				WriteFile(hOut, changedstr, nIn, &nOut, NULL);
+				WriteFile(hOut, wbuffer, nin * 2, &nout, NULL);
 			}
 
-			sprintf(message, "File %s has been changed. Number of changes: %d\n", str, count);
-			WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, strlen(message) + 1, &cbWritten, NULL);
-			printf("\n");
-			strcpy(((LPSTR)lpFileMap), message);
 			CloseHandle(hIn);
 			CloseHandle(hOut);
-			SetEvent(hEventRecv);
+			sprintf(message, "File %s has been changed. Number of changes: %d\n", str, count);
+			WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, strlen(message) + 1, &cbWritten, NULL);
+
+			strcpy(((LPSTR)lpFileMap), message);
+			strcpy(str, ((LPSTR)lpFileMap));
+			printf("Test: %s\n", str);
+			ReleaseSemaphore(hSemaphoreRecv, 1, NULL);
 		}
 	}
 
-	CloseHandle(hEventSend);
-	CloseHandle(hEventRecv);
-	CloseHandle(hEventTermination);
+	CloseHandle(hSemaphoreSend);
+	CloseHandle(hSemaphoreRecv);
 	UnmapViewOfFile(lpFileMap);
 	CloseHandle(hFileMapping);
 
