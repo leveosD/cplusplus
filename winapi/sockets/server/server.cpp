@@ -6,11 +6,13 @@
 // подключен раньше windows.h!
 #include <windows.h>
 #include <ws2tcpip.h>
+#include <iostream>
 #pragma comment(lib, "Ws2_32.lib")
 
-#define PORT 666
+#define PORT 8081
 const int BUF_SIZE = 20 * 1024;
 const char STR[3] = "@#";
+const char PATH[44] = "D:/code/cplusplus/winapi/sockets/x64/Debug/";
 
 // макрос для печати количества активных
 // пользователей 
@@ -127,6 +129,7 @@ int main(int argc, char* argv[])
             DWORD thID;
         CreateThread(NULL, NULL, dostuff, &client_socket, NULL, &thID);
     }
+    printf("It's jush finished_/\\('_')/\\_ ");
     return 0;
 }
 
@@ -141,18 +144,19 @@ DWORD WINAPI dostuff(LPVOID client_socket)
 #define str1 "Enter 1 parametr\r\n"
 #define str2 "Enter 2 parametr\r\n" 
     // отправляем клиенту сообщение
-    //send(my_sock, str1, sizeof(str1), 0);
+    send(my_sock, str1, sizeof(str1), 0);
 
     int bytes_recv; // размер принятого сообщения
     int changes = 0;
     char res[10];
 
     // обработка первого параметра
-    if ((bytes_recv = recv(my_sock, &buff[0], sizeof(buff), 0)) && bytes_recv != SOCKET_ERROR) // принятие сообщения от клиента
+    while ((bytes_recv = recv(my_sock, &buff[0], sizeof(buff), 0)) && bytes_recv != SOCKET_ERROR) // принятие сообщения от клиента
     {
         char* cntx = nullptr;
         char* inFile = strtok_s(buff, " ", &cntx);
         char* symbs = strtok_s(NULL, " ", &cntx);
+        symbs[2] = '\0';
         changes = changeFunction(inFile, symbs);
         _itoa_s(changes, res, 10, 10);
         send(my_sock, res, strlen(res) + 1, 0); // отправляем клиенту сообщение
@@ -170,58 +174,100 @@ DWORD WINAPI dostuff(LPVOID client_socket)
     printf("-disconnect\n");
     PRINTNUSERS
 
-        // закрываем сокет
-        closesocket(my_sock);
+    // закрываем сокет
+    closesocket(my_sock);
     return 0;
 }
 
 int changeFunction(const char* f, const char* s)
 {
-    HANDLE hIn, hOut;
-    hIn = CreateFileA(f, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
-    int len = strlen(f) + 1;
-    char* outfile = new char[len];
-    strcpy_s(outfile, len, f);
-    char* pos = strchr(outfile, '.');
-    if (pos != nullptr) {
-        int letter = pos - outfile;
-        outfile[letter + 1] = 'o';
-        outfile[letter + 2] = 'u';
-        outfile[letter + 3] = 't';
-        outfile[letter + 4] = '\0';
+    //HANDLE hIn, hOut;
+    int len = 44 + strlen(f);
+    char* fullpath = new char[len];
+    strcpy_s(fullpath, 44, PATH);
+    strcpy_s(fullpath + 43, strlen(f) + 1, f);
+    //fullpath[len] = '\0';
+    //printf("File: %s\t Symbs: %s", fullpath, s);
+    //hIn = CreateFileA(fullpath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+    FILE* infile;
+    //std::cout << infile << " " << &infile << *infile << std::endl;
+    errno_t err = fopen_s(&infile, fullpath, "r");
+    if (err != 0)
+    /*}
+    catch(std::exception e){
+        printf("%s\n", e.what());
+        delete[] fullpath;
+        return -1;
+    }*/
+    //if (hIn == INVALID_HANDLE_VALUE) {
+    {    
+        printf("(ThreadId: %lu), Can't open file %s. Error: %d!\n", GetCurrentThreadId(), fullpath, GetLastError());
+        delete[] fullpath;
+        return -1;
     }
-    hOut = CreateFileA(outfile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hIn != INVALID_HANDLE_VALUE && hOut != INVALID_HANDLE_VALUE)
+    
+    char* fullpath2 = new char[len];
+    strcpy_s(fullpath2, len, fullpath);
+    char* pos = strchr(fullpath2, '.');
+    if (pos != nullptr) {
+        int letter = pos - fullpath2;
+        fullpath2[letter + 1] = 'o';
+        fullpath2[letter + 2] = 'u';
+        fullpath2[letter + 3] = 't';
+        fullpath2[letter + 4] = '\0';
+    }
+    /*try {
+        hOut = CreateFileA(outfile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    }
+    catch (std::exception e) {
+        printf("%s\n", e.what());
+        delete[] fullpath;
+        return -1;
+    }*/
+    FILE* outfile;
+    err = fopen_s(&outfile, fullpath2, "w");
+    if(err == 0)
+    //if (hOut != INVALID_HANDLE_VALUE)
     {
         char buffer[BUF_SIZE] = { 0 };
-        wchar_t wbuffer[BUF_SIZE] = { 0 };
-        DWORD nin, nout;
+        //wchar_t wbuffer[BUF_SIZE] = { 0 };
+        //DWORD nin, nout;
         int count = 0;
-        size_t outSize;
+        size_t n;
 
-        while (ReadFile(hIn, buffer, BUF_SIZE, &nin, NULL) && nin > 0)
+        //while (ReadFile(hIn, buffer, BUF_SIZE, &nin, NULL) && nin > 0)
+        while(!feof(infile))
         {
-            mbstowcs_s(&outSize, wbuffer, BUF_SIZE, buffer, BUF_SIZE - 1);
-            for (int j = 0; j < nin; j++) {
-                if (wbuffer[j] == s[0] && wbuffer[j + 1] == s[1]) {
-                    wbuffer[j] = STR[0];
-                    wbuffer[j + 1] = STR[1];
+            //mbstowcs_s(&outSize, wbuffer, BUF_SIZE, buffer, BUF_SIZE - 1);
+            n = fread(buffer, sizeof(char), BUF_SIZE, infile);
+            for (int j = 0; j < n; j++) {
+                if (buffer[j] == s[0] && buffer[j + 1] == s[1]) {
+                    buffer[j] = STR[0];
+                    buffer[j + 1] = STR[1];
                     j++;
                     count++;
                 }
             }
-            WriteFile(hOut, wbuffer, nin * 2, &nout, NULL);
+            fwrite(buffer, sizeof(char), BUF_SIZE, outfile);
+            //WriteFile(hOut, wbuffer, nin * 2, &nout, NULL);
         }
 
-        CloseHandle(hIn);
-        CloseHandle(hOut);
+        //CloseHandle(hIn);
+        //CloseHandle(hOut);
+        fclose(infile);
+        fclose(outfile);
         printf("(ThreadId: %lu) Successfully editing. Changes: %d\n", GetCurrentThreadId(), count);
+        delete[] fullpath;
+        delete[] fullpath2;
         return count;
     }
     else
     {
-        printf("(ThreadId: %lu), Can't open file %s!\n", GetCurrentThreadId(), f);
-        // освобождение мьютекса, иначе он - покинутый!
+        fclose(infile);
+        //CloseHandle(hIn);
+        printf("(ThreadId: %lu), Can't create file %s. Error: %d!\n", GetCurrentThreadId(), fullpath, GetLastError());
+        delete[] fullpath;
+        delete[] fullpath2;
         return -1;
     }
 }
