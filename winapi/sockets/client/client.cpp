@@ -47,14 +47,11 @@ int main(int argc, char* argv[])
      else
      {
          // попытка получить IP адрес по доменному имени сервера
-         //if (hst = gethostbyname(SERVERADDR))
          addrinfo hints;
          addrinfo* result;
          int dwRetval = getaddrinfo(SERVERADDR, STR_PORT, &hints, &result);
-         if (dwRetval == 0) {
-
-             // hst->h_addr_list содержит не массив адресов,
-             // а массив указателей на адреса
+         if (dwRetval == 0) 
+         {
              ((unsigned long*)&dest_addr.sin_addr)[0] =
                  ((unsigned long**)result)[0][0];
              printf("else: %d", ((unsigned long**)result)[0][0]);
@@ -79,21 +76,16 @@ int main(int argc, char* argv[])
 
      // Шаг 4 - чтение и передача сообщений
      int nsize = 0;
-     /*char message[] = "Client has been connected.";
-     strcpy_s(buff, 1024, message);
-     send(my_sock, &buff[0], strlen(&buff[0]), 0);*/
      while ((nsize = recv(my_sock, &buff[0], sizeof(buff) - 1, 0)) != SOCKET_ERROR)
      {
          // ставим завершающий ноль в конце строки
-         buff[nsize] = 0;
+         buff[nsize] = '\0';
 
          // выводим на экран
-         printf("%s pairs was changed in file.\n", buff);
+         printf(buff);
 
          // читаем пользовательский ввод с клавиатуры
-         printf("Enter file's name and symbs: "); fgets(&buff[0], sizeof(buff) - 1, stdin);
-         buff[strlen(buff) + 1] = '\0';
-         buff[strlen(buff) + 2] = '2';
+         fgets(&buff[0], sizeof(buff) - 1, stdin);
 
          // проверка на "quit"
          if (!strcmp(&buff[0], "quit\n"))

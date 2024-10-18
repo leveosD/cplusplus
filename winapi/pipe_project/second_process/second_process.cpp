@@ -2,10 +2,11 @@
 #include <windows.h> 
 
 HINSTANCE hLib;
-typedef void(*ChangeText)(HANDLE, HANDLE, const wchar_t*, const wchar_t*);
+typedef void(*ChangeText)(HANDLE, HANDLE, const char*, const char*);
 
-const wchar_t STR[3] = L"AB";
+const char STR[3] = "#@";
 const int STR_SIZE = 128;
+const char PATH[] = "D:/code/cplusplus/winapi/pipe_project/x64/Debug/";
 
 int main(int argc, char* argv[])
 {
@@ -44,14 +45,36 @@ int main(int argc, char* argv[])
 	//size_t size = strlen(argv[1]) + 1;
 	//wchar_t* inFile = new wchar_t[size];
 
-	size_t size = strlen(filename) + 1;
-	wchar_t* inFile = new wchar_t[size];
-	size_t outSize;
-	mbstowcs_s(&outSize, inFile, size, filename, size - 1);
-	wchar_t* outFile = new wchar_t[size];
-	//wchar_t outFile[20] = L"text1.txt";
-	wcscpy_s(outFile, size, inFile);
-	wchar_t* pos = wcsstr(outFile, L".");
+	HANDLE hIn, hOut;
+	char* outFile;
+	//wcout << argv[1];
+	hIn = CreateFileA(argv[1], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+	if (hIn == INVALID_HANDLE_VALUE) {
+		//addLogMessage("Original infile can't be opened");
+		size_t size = strlen(argv[1]) + strlen(PATH) + 1;
+		char* inFile = new char[size];
+		strcpy_s(inFile, strlen(PATH) + 1, PATH);
+		strcat_s(inFile, size, argv[1]);
+		outFile = new char[size];
+		strcpy_s(outFile, size, inFile);
+		hIn = CreateFileA(inFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+		if (hIn == INVALID_HANDLE_VALUE)
+		{
+			WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "INFILE", 6, &cbWritten, NULL);
+			//addLogMessage("Can't open in file with PAth");
+			//addLogMessage(inFile);
+			delete[] inFile;
+			return 4;
+		}
+		delete[] inFile;
+	}
+	else {
+		//addLogMessage("Original infile was opened");
+		//addLogMessage(argv[1]);
+		outFile = new char[strlen(argv[1]) + 1];
+		strcpy_s(outFile, strlen(argv[1]) + 1, argv[1]);
+	}
+	char* pos = strchr(outFile, '.');
 	if (pos != NULL)
 	{
 		int letter = pos - outFile;
@@ -60,29 +83,18 @@ int main(int argc, char* argv[])
 		outFile[letter + 3] = L't';
 		outFile[letter + 4] = L'\0';
 	}
-	wchar_t* wSymbs = new wchar_t[strlen(symbs) + 1];
-	mbstowcs_s(&outSize, wSymbs, strlen(symbs) + 1, symbs, 2);
-	
-	HANDLE hIn, hOut;
-	hIn = CreateFileW(inFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
-	if (hIn == INVALID_HANDLE_VALUE)
-	{
-		WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "ERROR", 5, &cbWritten, NULL);
-		FreeLibrary(hLib);
-		return 2;
-	}
-
-	hOut = CreateFileW(outFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	//addLogMessage(outFile);
+	hOut = CreateFileA(outFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hOut == INVALID_HANDLE_VALUE) {
-		WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "ERROR", 5, &cbWritten, NULL);
-		FreeLibrary(hLib);
-		return 3;
+		WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "OUTFILE", 7, &cbWritten, NULL);
+		//addLogMessage("Can't open out file");
+		//addLogMessage(outFile);
+		return 5;
 	}
 
-	ct(hIn, hOut, wSymbs, STR);
+	ct(hIn, hOut, argv[2], STR);
 	WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "\n(Child) File has been changed. ", 32, &cbWritten, NULL);
 	
-	delete[] wSymbs;
 	FreeLibrary(hLib);
 	CloseHandle(hIn);
 	CloseHandle(hOut);

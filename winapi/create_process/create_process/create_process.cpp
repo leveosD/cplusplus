@@ -1,7 +1,8 @@
 ﻿#include <iostream>
 #include <windows.h> 
 
-const int MAX_SIZE = 255;
+const int MAX_SIZE = 512;
+const char PATH[] = "D:/code/cplusplus/winapi/create_process/x64/Debug/";
 
 //параметры командной строки: file.txt ad file2.txt xd
 int main(int argc, char* argv[])
@@ -16,12 +17,14 @@ int main(int argc, char* argv[])
 	LPSTARTUPINFOA si = new STARTUPINFOA[127];
 	LPPROCESS_INFORMATION pi = new PROCESS_INFORMATION[127];
 	HANDLE hThread[127];
-	char exeName[MAX_SIZE] = "D:/code/cplusplus/winapi/dll_project/x64/Debug/test.exe ";
+	const char exeName[] = "D:/code/cplusplus/winapi/dll_project/x64/Debug/test.exe";
 	//char exeName[MAX_SIZE] = "C:/proga/lab4_2/x64/Debug/lab4_2.exe ";
 	char* ln;
 	for (int i = 1; i < (argc - 1); i+= 2) {
 		ln = new char[MAX_SIZE];
 		strcpy_s(ln, MAX_SIZE, exeName);
+		strcat_s(ln, MAX_SIZE, " ");
+		strcat_s(ln, MAX_SIZE, PATH);
 		strcat_s(ln, MAX_SIZE, argv[i]);
 		strcat_s(ln, MAX_SIZE, " ");
 		strcat_s(ln, MAX_SIZE, argv[i + 1]);
@@ -32,7 +35,7 @@ int main(int argc, char* argv[])
 		ZeroMemory(&si[i], sizeof(si[i]));
 		si[i].cb = sizeof(si);
 		ZeroMemory(&pi[i], sizeof(pi[i]));
-		cout << ln << endl;
+		//cout << ln << endl;
 		if (!CreateProcessA(NULL, ln, NULL, NULL, TRUE, NULL, NULL, NULL, &si[i], &pi[i]))
 		{
 			cout << GetLastError();
