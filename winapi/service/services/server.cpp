@@ -6,8 +6,9 @@
 #define PORT 8081
 const int BUF_SIZE = 1024;
 const char STR[3] = "@#";
-const char PATH[44] = "D:/code/cplusplus/winapi/service/x64/Debug/";
 const int M_SIZE = 80;
+
+extern char* path;
 
 int nclients = 0;
 SOCKET mysocket;
@@ -53,7 +54,6 @@ int Server()
         DWORD thID;
         CreateThread(NULL, NULL, dostuff, &client_socket, NULL, &thID);
     }
-    printf("It's jush finished_/\\('_')/\\_ ");
     // Закрываем идентификаторы объектов-событий  в ServiceStop()
     return 0;
 }
@@ -121,6 +121,7 @@ int ServiceStart()
 void ServiceStop()
 {
 	addLogMessage("All Kernel objects closed!");
+    delete[] path;
 }
 
 DWORD WINAPI dostuff(LPVOID client_socket)
@@ -128,7 +129,7 @@ DWORD WINAPI dostuff(LPVOID client_socket)
     char message[80] = { 0 };
     SOCKET my_sock;
     my_sock = ((SOCKET*)client_socket)[0];
-    char buff[BUF_SIZE];
+    char buff[BUF_SIZE] = { 0 };
     char req[74] = "Enter file's name and symbols which have to be changed: ";
     // отправляем клиенту сообщение
     send(my_sock, req, strlen(req) + 1, 0);
@@ -137,7 +138,7 @@ DWORD WINAPI dostuff(LPVOID client_socket)
     int changes = 0;
 
     // обработка первого параметра
-    while ((bytes_recv = recv(my_sock, &buff[0], strlen(buff), 0)) && bytes_recv != SOCKET_ERROR) // принятие сообщения от клиента
+    while ((bytes_recv = recv(my_sock, &buff[0], sizeof(buff) - 1, 0)) && bytes_recv != SOCKET_ERROR) // принятие сообщения от клиента
     {
         char* cntx = nullptr;
         char* inFile = strtok_s(buff, " ", &cntx);
@@ -160,24 +161,15 @@ int changeFunction(const char* f, const char* s)
 {
     char message[80] = { 0 };
     //HANDLE hIn, hOut;
-    int len = 44 + strlen(f);
+    int len = strlen(path) + strlen(f) + 1;
     char* fullpath = new char[len];
-    strcpy_s(fullpath, 44, PATH);
-    strcpy_s(fullpath + 43, strlen(f) + 1, f);
-    //fullpath[len] = '\0';
-    //printf("File: %s\t Symbs: %s", fullpath, s);
-    //hIn = CreateFileA(fullpath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+    strcpy_s(fullpath, strlen(path) + 1, path);
+    strcpy_s(fullpath + strlen(path), strlen(f) + 1, f);
+    addLogMessage("FullPATH");
+    addLogMessage(fullpath);
     FILE* infile;
-    //std::cout << infile << " " << &infile << *infile << std::endl;
     errno_t err = fopen_s(&infile, fullpath, "r");
     if (err != 0)
-        /*}
-        catch(std::exception e){
-            printf("%s\n", e.what());
-            delete[] fullpath;
-            return -1;
-        }*/
-        //if (hIn == INVALID_HANDLE_VALUE) {
     {
         sprintf_s(message, M_SIZE, "(ThreadId: %lu), Can't open file %s. Error: %d!\n", GetCurrentThreadId(), fullpath, GetLastError());
         addLogMessage(message);
@@ -187,7 +179,7 @@ int changeFunction(const char* f, const char* s)
 
     char* fullpath2 = new char[len];
     strcpy_s(fullpath2, len, fullpath);
-    char* pos = strchr(fullpath2, '.');
+    char* pos = strstr(fullpath2, ".txt");
     if (pos != nullptr) {
         int letter = pos - fullpath2;
         fullpath2[letter + 1] = 'o';
@@ -195,29 +187,16 @@ int changeFunction(const char* f, const char* s)
         fullpath2[letter + 3] = 't';
         fullpath2[letter + 4] = '\0';
     }
-    /*try {
-        hOut = CreateFileA(outfile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    }
-    catch (std::exception e) {
-        printf("%s\n", e.what());
-        delete[] fullpath;
-        return -1;
-    }*/
     FILE* outfile;
     err = fopen_s(&outfile, fullpath2, "w");
     if (err == 0)
-        //if (hOut != INVALID_HANDLE_VALUE)
     {
         char buffer[BUF_SIZE] = { 0 };
-        //wchar_t wbuffer[BUF_SIZE] = { 0 };
-        //DWORD nin, nout;
         int count = 0;
         size_t n;
 
-        //while (ReadFile(hIn, buffer, BUF_SIZE, &nin, NULL) && nin > 0)
         while (!feof(infile))
         {
-            //mbstowcs_s(&outSize, wbuffer, BUF_SIZE, buffer, BUF_SIZE - 1);
             n = fread(buffer, sizeof(char), BUF_SIZE, infile);
             for (int j = 0; j < n; j++) {
                 if (buffer[j] == s[0] && buffer[j + 1] == s[1]) {
@@ -231,12 +210,7 @@ int changeFunction(const char* f, const char* s)
             char res[10];
             _itoa_s(strlen(buffer), res, 10, 10);
             addLogMessage(res);
-            //WriteFile(hOut, wbuffer, nin * 2, &nout, NULL);
         }
-        //char* empty = '\0';
-        //fwrite(&empty, sizeof(char), 1, outfile);
-        //CloseHandle(hIn);
-        //CloseHandle(hOut);
         fclose(infile);
         fclose(outfile);
         sprintf_s(message, M_SIZE, "(ThreadId: %lu) Successfully editing. Changes: %d\n", GetCurrentThreadId(), count);
@@ -248,7 +222,6 @@ int changeFunction(const char* f, const char* s)
     else
     {
         fclose(infile);
-        //CloseHandle(hIn);
         sprintf_s(message, M_SIZE, "(ThreadId: %lu), Can't create file %s. Error: %d!\n", GetCurrentThreadId(), fullpath, GetLastError());
         addLogMessage(message);
         delete[] fullpath;

@@ -10,7 +10,6 @@
 #define PORT 8081
 const int BUF_SIZE = 1024;
 const char STR[3] = "@#";
-const char PATH[44] = "D:/code/cplusplus/winapi/sockets/x64/Debug/";
 
 // макрос для печати количества активных
 // пользователей 
@@ -25,6 +24,7 @@ DWORD WINAPI dostuff(LPVOID client_socket);
 // глобальная переменная – количество
 // активных пользователей 
 int nclients = 0;
+char* path;
 
 // функция по варианту
 int changeFunction(const char* f, const char* s);
@@ -32,7 +32,13 @@ int changeFunction(const char* f, const char* s);
 int main(int argc, char* argv[])
 {
     char buff[1024];    // Буфер для различных нужд
-
+    path = new char[strlen(argv[0] + 2)];
+    strcpy_s(path, strlen(argv[0]) + 1, argv[0]);
+    char second[] = "server.exe";
+    char* p = strstr(path, second);
+    if (p != nullptr) {
+        *p = '\0';
+    }
     printf("TCP SERVER DEMO\n");
 
     // Шаг 1 - Инициализация Библиотеки Сокетов
@@ -121,7 +127,8 @@ int main(int argc, char* argv[])
             DWORD thID;
         CreateThread(NULL, NULL, dostuff, &client_socket, NULL, &thID);
     }
-    printf("It's jush finished_/\\('_')/\\_ ");
+    printf("Exit...");
+    delete[] path;
     return 0;
 }
 
@@ -132,7 +139,7 @@ DWORD WINAPI dostuff(LPVOID client_socket)
 {
     SOCKET my_sock;
     my_sock = ((SOCKET*)client_socket)[0];
-    char buff[BUF_SIZE];
+    char buff[BUF_SIZE] = { 0 };
     char req[74] = "Enter file's name and symbols which have to be changed: ";
     // отправляем клиенту сообщение
     send(my_sock, req, strlen(req) + 1, 0);
@@ -141,7 +148,7 @@ DWORD WINAPI dostuff(LPVOID client_socket)
     int changes = 0;
 
     // обработка первого параметра
-    while ((bytes_recv = recv(my_sock, &buff[0], strlen(buff), 0)) && bytes_recv != SOCKET_ERROR) // принятие сообщения от клиента
+    while ((bytes_recv = recv(my_sock, &buff[0], sizeof(buff) - 1, 0)) && bytes_recv != SOCKET_ERROR) // принятие сообщения от клиента
     {
         char* cntx = nullptr;
         char* inFile = strtok_s(buff, " ", &cntx);
@@ -163,10 +170,10 @@ DWORD WINAPI dostuff(LPVOID client_socket)
 
 int changeFunction(const char* f, const char* s)
 {
-    int len = 44 + strlen(f);
+    int len = strlen(path) + strlen(f) + 1;
     char* fullpath = new char[len];
-    strcpy_s(fullpath, 44, PATH);
-    strcpy_s(fullpath + 43, strlen(f) + 1, f);
+    strcpy_s(fullpath, strlen(path) + 1, path);
+    strcpy_s(fullpath + strlen(path), strlen(f) + 1, f);
     FILE* infile;
     errno_t err = fopen_s(&infile, fullpath, "r");
     if (err != 0)
@@ -178,7 +185,7 @@ int changeFunction(const char* f, const char* s)
     
     char* fullpath2 = new char[len];
     strcpy_s(fullpath2, len, fullpath);
-    char* pos = strchr(fullpath2, '.');
+    char* pos = strstr(fullpath2, ".txt");
     if (pos != nullptr) {
         int letter = pos - fullpath2;
         fullpath2[letter + 1] = 'o';

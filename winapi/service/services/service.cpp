@@ -14,6 +14,8 @@ SERVICE_STATUS ss;
 // Идентификатор сервиса
 SERVICE_STATUS_HANDLE ssHandle;
 const char* MyServiceName = "Sample service";
+char* path;
+char* logfile;
 // функции службы, выполняющие работу
 extern int Server();
 extern int ServiceStart();
@@ -30,7 +32,7 @@ int addLogMessage(const char* text)
 	DWORD res, Sz;
 	HANDLE hFile;
 	char buf[256];
-	hFile = CreateFileA("D:/code/cplusplus/winapi/service/logfile.log", GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_FLAG_WRITE_THROUGH, NULL);
+	hFile = CreateFileA(logfile, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_FLAG_WRITE_THROUGH, NULL);
 	if (!hFile) return (-1);
 	else
 	{
@@ -48,6 +50,19 @@ int addLogMessage(const char* text)
 // -----------------------------------------------------
 void main(int agrc, char* argv[])
 {
+	path = new char[strlen(argv[0] + 2)];
+	strcpy_s(path, strlen(argv[0]) + 1, argv[0]);
+	char name[] = "service.exe";
+	char* p = strstr(path, name);
+	if (p != nullptr) {
+		*p = '\0';
+	}
+	logfile = new char[strlen(path) + 12];
+	strcpy_s(logfile, strlen(path) + 1, path);
+	strcpy_s(logfile + strlen(path), 12, "logfile.log");
+
+	addLogMessage("PATH");
+	addLogMessage(path);
 	char buffer[256];
 	// Таблица точек входа
 	SERVICE_TABLE_ENTRYA DispatcherTable[] =

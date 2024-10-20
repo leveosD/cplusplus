@@ -2,19 +2,22 @@
 #include <windows.h> 
 #include <conio.h>
 
-HINSTANCE hLib;
-typedef void(*ChangeText)(HANDLE, HANDLE, const wchar_t*, const wchar_t*);
-
-const char STR[3] = "AB";
+const char STR[3] = "#@";
 const int STR_SIZE = 128;
 const int BUF_SIZE = 512;
 
-const char PATH[61] =	  "D:/code/cplusplus/winapi/mailslot_project/x64/Debug/file.txt";
-const char FILENAME[61] = "D:/code/cplusplus/winapi/mailslot_project/x64/Debug/file.out";
 
 int main(int argc, char* argv[])
 {
 	using namespace std;
+	char* path = new char[strlen(argv[0] + 2)];
+	strcpy_s(path, strlen(argv[0]) + 1, argv[0]);
+	char second[] = "server.exe";
+	char* p = strstr(path, second);
+	if (p != nullptr) {
+		*p = '\0';
+	}
+	cout << "Path: " << path << endl;
 	BOOL   fReturnCode;
 	DWORD  cbMessages;
 	DWORD  cbMsgNumber;
@@ -44,12 +47,13 @@ int main(int argc, char* argv[])
 			cout << "Error: " << GetLastError() << endl;
 			break;
 		}
+
 		if (cbMsgNumber != 0)
 		{
 			if (ReadFile(hMailslot1, szBuf, BUF_SIZE, &cbRead, NULL))
 			{
 				cout << "Content: " << szBuf << endl;
-				if (strcmp(szBuf, "exit") == 0)
+				if (!strcmp(szBuf, "exit"))
 					break;
 				else
 				{
@@ -60,52 +64,66 @@ int main(int argc, char* argv[])
 						cout << "Error: " << GetLastError() << endl;
 						break;
 					}
-					else {
+					else 
+					{
 						char* cntx = nullptr;
-						char* inFile = strtok_s(szBuf, " ", &cntx);
-						char* fullinfile = new char[strlen(inFile) + 46];
-
-						memcpy(fullinfile, PATH, 45);
-						memcpy(fullinfile + 45, inFile, strlen(inFile) + 1);
-						char* symbs = strtok_s(NULL, " ", &cntx);
+						char* filename = strtok_s(szBuf, " ", &cntx);
+						char* symbs = cntx;
+						
 						HANDLE hIn, hOut;
-						hIn = CreateFileA(PATH, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
-						if (hIn == INVALID_HANDLE_VALUE)
-						{
-							delete[] fullinfile;
-							cout << "Error: " << GetLastError() << " Probably incorrect data." << endl;
-							break;
-						}
-						delete[] fullinfile;
+						//wcout << argv[1];
+						int len = strlen(path) + strlen(filename) + 1;
+						char* infile = new char[len];
+						strcpy_s(infile, strlen(path) + 1, path);
+						strcpy_s(infile + strlen(path), strlen(filename) + 1, filename);
+						hIn = CreateFileA(infile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 
-						hOut = CreateFileA(FILENAME, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-						if (hOut == INVALID_HANDLE_VALUE) {
-							cout << "Error: " << GetLastError() << endl;
-							break;
+						char* outfile = new char[len];
+						strcpy_s(outfile, len, infile);
+						char* pos = strstr(outfile, ".txt");
+						if (pos != nullptr) {
+							int letter = pos - outfile;
+							outfile[letter + 1] = 'o';
+							outfile[letter + 2] = 'u';
+							outfile[letter + 3] = 't';
+							outfile[letter + 4] = '\0';
 						}
-						CHAR buffer[BUF_SIZE] = { 0 };
-						DWORD nIn, nOut;
-						int count = 0;
-						while (ReadFile(hIn, buffer, BUF_SIZE, &nIn, NULL) && nIn > 0)
+						cout << "Outfile: " << outfile << endl;
+						hOut = CreateFileA(outfile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+						if (hIn != INVALID_HANDLE_VALUE && hOut != INVALID_HANDLE_VALUE)
 						{
-							wchar_t str[BUF_SIZE] = { 0 };
-							MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, buffer, nIn, str, BUF_SIZE);
-							for (int i = 0; i < nIn; i++) {
-								if (str[i] == symbs[0] && str[i + 1] == symbs[1]) {
-									str[i] = STR[0];
-									str[i + 1] = STR[1];
-									i++;
-									count++;
+							char buffer[BUF_SIZE] = { 0 };
+							wchar_t wbuffer[BUF_SIZE] = { 0 };
+							DWORD nin, nout;
+							size_t outSize;
+							int count = 0;
+							while (ReadFile(hIn, buffer, BUF_SIZE, &nin, NULL) && nin > 0)
+							{
+								mbstowcs_s(&outSize, wbuffer, BUF_SIZE, buffer, BUF_SIZE - 1);
+								for (int j = 0; j < nin; j++) {
+									if (buffer[j] == symbs[0] && buffer[j + 1] == symbs[1]) {
+										buffer[j] = STR[0];
+										buffer[j + 1] = STR[1];
+										j++;
+										count++;
+									}
 								}
+								WriteFile(hOut, buffer, nin, &nout, NULL);
 							}
-							BOOL flag;
-							char changedstr[BUF_SIZE] = { 0 };
-							WideCharToMultiByte(CP_UTF8, WC_DEFAULTCHAR, str, nIn, changedstr, BUF_SIZE, NULL, &flag);
-							WriteFile(hOut, changedstr, nIn, &nOut, NULL);
+							CloseHandle(hIn);
+							CloseHandle(hOut);
+							delete[] infile;
+							delete[] outfile;
+							cout << "File " << filename << " has been changed. Changes: " << count << endl;
+							sprintf_s(message, 80, "Changes: %d.", count);
+							WriteFile(hMailslot2, message, strlen(message) + 1, &cbWritten, NULL);
 						}
-						CloseHandle(hIn);
-						CloseHandle(hOut);
-						cout << "File " << inFile << " has been changed.\n";
+						else {
+							WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "\nINFILE OR OUTFILE ERROR", 24, &cbWritten, NULL);
+							delete[] infile;
+							delete[] outfile;
+							return 0;
+						}
 					}
 				}
 			}

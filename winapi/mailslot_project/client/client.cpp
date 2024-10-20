@@ -1,13 +1,11 @@
 ﻿#include <windows.h>
 #include <stdio.h>
-#include <conio.h>
 #include <iostream>
 
 const size_t NAME_SIZE = 256;
 const size_t BUF_SIZE = 512;
 
-
-DWORD main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	using namespace std;
 	HANDLE hMailslot1, hMailslot2;
@@ -54,12 +52,9 @@ DWORD main(int argc, char* argv[])
 			cout << "Error: " << GetLastError() << endl;
 			break;
 		}
-		while (cbMsgNumber)
-		{
-			if (ReadFile(hMailslot2, szBuf, 512, &cbRead, NULL))
-			{
-				cout << "Received: " << szBuf;
-			}
+		//cout << cbMsgNumber << endl;
+		if (ReadFile(hMailslot2, szBuf, 512, &cbRead, NULL)) {
+			cout << szBuf << endl;
 		}
 	}
 	cout << "Mailslot client demo has been ended.\n";
